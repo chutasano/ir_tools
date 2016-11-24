@@ -242,7 +242,7 @@ int* generate_bi_phase(int* new_size, int time_slot, char* sequence, int sequenc
   int* raw_code = malloc(sizeof(int) * sequence_size*2);
 
   //generate codes
-  for (int i; i<sequence_size*2; i++)
+  for (int i=0; i<sequence_size*2; i++)
   {
     if (sequence[i] == '0') // go down in the middle of time_slot
     {
@@ -310,6 +310,105 @@ int* generate_pulse_length(int* new_size, int off_length, int zero_burst, int on
   }
   new_size* = sequence_size * 2;
   return raw_code;
+}
+
+
+//note default: address_size = 5, data_size = 6
+int* generate_rc5(int* new_size, char* address, char* data)
+{
+  int time_slot = 1780;
+  int* raw_code = malloc(sizeof(int) * 14*2);
+  char[] sequence = "110";
+  //generate codes
+  for (int i=0; i<14; i++) //3 + 5 + 6
+  {
+    char* sequence_to_use;
+    int actual_i;
+    if (i < 3)
+    {
+      sequence_to_use = sequence&;
+      actual_i = i;
+    }
+    else if (i < 8)
+    {
+      sequence_to_use = address;
+      actual_i = i-3;
+    }
+    else
+    {
+      sequence_to_use = data;
+      actual_i = i-8;
+    }
+    if (sequence_to_use[actual_i] == '0') // go down in the middle of time_slot
+    {
+      (raw_code+actual_i)* = time_slot/2 + time_slot%2; // incase it's odd
+      (raw_code+ actual_i++)* = -time_slot/2; // note this mutator on i
+      i++;
+    }
+    else if (sequence[i] == '1')
+    {
+      (raw_code+actual_i)* = -time_slot/2 + time_slot%2;
+      (raw_code+ actual_i++)* = time_slot/2;
+      i++;
+    }
+    else
+    {
+      // TODO ERROR
+    }
+  }
+  new_size* = 14*2;
+  return raw_code;
+}
+
+char flip(char a)
+{
+  if (a == '0') return '1';
+  else if (a == '1') return '0';
+  else return 'e';
+}
+
+//address + data size are both 8 bits
+int* generate_nec(int* new_size, char* address, char* data)
+{
+  int header[2] = {9000,-4500};
+  int* size = malloc(sizeof(int));
+  char* total_string = malloc(sizeof(int)*8*4);
+  for (int i=0; i<8; i++)
+  {
+    total_string[i] = address[i];
+  }
+  for (int i=0; i<8; i++)
+  {
+    total_string[i+8] = flip(address[i]);
+  }
+  for (int i=0; i<8; i++)
+  {
+    total_string[i+16] = data[i];
+  }
+  for (int i=0; i<8; i++)
+  {
+    total_string[i+24] = flip(data[i]);
+  }
+
+  int* rest = generate_pulse_distance(size, 563, 562, 1687, total_string, 32)
+  char* raw_code = add_header(size, header, 2, rest, 32);
+  return raw_code;
+}
+
+int* add_header(int* new_size, int* header, int h_size, int* body, int b_size)
+{
+  int* merged = malloc(sizeof(int) * (h_size+b_size));
+  for(int i=0; i<h_size; i++)
+  {
+    (merged+i)* = (header+i)*;
+  }
+  for (int i=0; i<b_size; i++)
+  {
+    (merged+i+h_size)* = (body+i)*;
+  }
+  new_size* = h_size+b_size;
+  return merged;
+  //does not free
 }
 
 #endif
