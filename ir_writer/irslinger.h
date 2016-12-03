@@ -204,86 +204,88 @@ static inline int irSlingRaw(uint32_t outPin, int frequency, double dutyCycle, c
   return 0;
 }
 
-/*
+
 //for raws, positive value = turn on for given microseconds
 //          negative value = turn off for given microseconds
 static inline int ir_send_raw(uint32_t outPin,
-int frequency,
-double dutyCycle,
-const int *pulses,
-int numPulses)
+    int frequency,
+    double dutyCycle,
+    const int *pulses,
+    int numPulses)
 {
-if (outPin > 31)
-{
-// Invalid pin number
-return 1;
-}
+  if (outPin > 31)
+  {
+    // Invalid pin number
+    return 1;
+  }
 
-// Generate Code
-gpioPulse_t irSignal[MAX_PULSES];
-int pulseCount = 0;
+  // Generate Code
+  gpioPulse_t irSignal[MAX_PULSES];
+  int pulseCount = 0;
 
-int i;
-for (i = 0; i < numPulses; i++)
-{
-if (pulses[i] >= 0) {
-carrierFrequency(outPin, frequency, dutyCycle, pulses[i], irSignal, &pulseCount);
-} else {
-gap(outPin, -pulses[i], irSignal, &pulseCount);
-}
-}
+  int i;
+  for (i = 0; i < numPulses; i++)
+  {
+    if (pulses[i] >= 0) {
+      carrierFrequency(outPin, frequency, dutyCycle, pulses[i], irSignal, &pulseCount);
+    } else {
+      gap(outPin, -pulses[i], irSignal, &pulseCount);
+    }
+  }
 
-printf("pulse count is %i\n", pulseCount);
-// End Generate Code
+  printf("pulse count is %i\n", pulseCount);
+  // End Generate Code
 
-// Init pigpio
-if (gpioInitialise() < 0)
-{
-// Initialization failed
-printf("GPIO Initialization failed\n");
-return 1;
-}
+  // Init pigpio
+  if (gpioInitialise() < 0)
+  {
+    // Initialization failed
+    printf("GPIO Initialization failed\n");
+    return 1;
+  }
 
-// Setup the GPIO pin as an output pin
-gpioSetMode(outPin, PI_OUTPUT);
+  // Setup the GPIO pin as an output pin
+  gpioSetMode(outPin, PI_OUTPUT);
 
-// Start a new wave
-gpioWaveClear();
+  // Start a new wave
+  gpioWaveClear();
 
-gpioWaveAddGeneric(pulseCount, irSignal);
-int waveID = gpioWaveCreate();
+  gpioWaveAddGeneric(pulseCount, irSignal);
+  int waveID = gpioWaveCreate();
 
-if (waveID >= 0)
-{
-int result = gpioWaveTxSend(waveID, PI_WAVE_MODE_ONE_SHOT);
+  if (waveID >= 0)
+  {
+    int result = gpioWaveTxSend(waveID, PI_WAVE_MODE_ONE_SHOT);
 
-printf("Result: %i\n", result);
-}
-else
-{
-printf("Wave creation failure!\n %i", waveID);
-}
+    printf("Result: %i\n", result);
+  }
+  else
+  {
+    printf("Wave creation failure!\n %i", waveID);
+  }
 
-// Wait for the wave to finish transmitting
-while (gpioWaveTxBusy())
-{
-time_sleep(0.1);
-}
+  // Wait for the wave to finish transmitting
+  while (gpioWaveTxBusy())
+  {
+    time_sleep(0.1);
+  }
 
-// Delete the wave if it exists
-if (waveID >= 0)
-{
-gpioWaveDelete(waveID);
-}
+  // Delete the wave if it exists
+  if (waveID >= 0)
+  {
+    gpioWaveDelete(waveID);
+  }
 
-// Cleanup
-gpioTerminate();
-return 0;
+  // Cleanup
+  gpioTerminate();
+  return 0;
 }
 
 
 //time_slot is the time in microseconds of a bit, header footer can be null
-int* generate_bi_phase(int* new_size, int time_slot, char* sequence, int sequence_size)
+int send_bi_phase(uint32_t outPin,
+    int frequency,
+    double dutyCycle, int time_slot, char* sequence, int sequence_size)
 {
   int* raw_code = malloc(sizeof(int) * sequence_size*2);
 
@@ -305,14 +307,21 @@ int* generate_bi_phase(int* new_size, int time_slot, char* sequence, int sequenc
       // TODO ERROR
     }
   }
-  new_size* = sequence_size * 2;
-  return raw_code;
+  int output = ir_send_raw(outPin, frequency, dutyCycle, raw_code, sequence_size*2);
+  free(raw_code);
+  return output;
 }
 
 // on_length on time in micros
 // zero_distance off time for 0 in micros (positive value)
 // one_distance on time for 1 in micros
-int* generate_pulse_distance(int* new_size, int on_length, int zero_distance, int one_distance, char* sequence, int sequence_size)
+int send_pulse_distance(uint32_t outPin,
+    int frequency,
+    double dutyCycle, 
+    int on_length,
+    int zero_distance,
+    int one_distance,
+    char* sequence, int sequence_size)
 {
   int* raw_code = malloc(sizeof(int) * sequence_size * 2);
   for (int i=0; i<sequence_size*2; i++)
@@ -331,11 +340,15 @@ int* generate_pulse_distance(int* new_size, int on_length, int zero_distance, in
       // TODO error
     }
   }
-  new_size* = sequence_size * 2;
-  return raw_code;
+  int output = ir_send_raw(outPin, frequency, dutyCycle, raw_code, sequence_size*2);
+  free(raw_code);
+  return output;
 }
 
-int* generate_pulse_length(int* new_size, int off_length, int zero_burst, int one_burst, char* sequence, int sequence_size)
+int send_pulse_length(uint32_t outPin,
+    int frequency,
+    double dutyCycle, 
+    int off_length, int zero_burst, int one_burst, char* sequence, int sequence_size)
 {
   int* raw_code = malloc(sizeof(int) * sequence_size * 2);
   for (int i=0; i<sequence_size*2; i++)
@@ -352,58 +365,27 @@ int* generate_pulse_length(int* new_size, int off_length, int zero_burst, int on
     {
       // TODO error
     }
-    (raw_code + ++i)* = off_length;
+    (raw_code + ++i)* = -off_length;
   }
-  new_size* = sequence_size * 2;
-  return raw_code;
+  output = ir_send_raw(outPin, frequency, dutyCycle, raw_code, sequence_size*2);
+  free(raw_code);
+  return output;
 }
 
 
 //note default: address_size = 5, data_size = 6
-int* generate_rc5(int* new_size, char* address, char* data)
+int send_rc5(uint32_t outPin,
+    int frequency,
+    double dutyCycle, char* address, char* data)
 {
   int time_slot = 1780;
-  int* raw_code = malloc(sizeof(int) * 14*2);
-  char[] sequence = "110";
-  //generate codes
-  for (int i=0; i<14; i++) //3 + 5 + 6
-  {
-    char* sequence_to_use;
-    int actual_i;
-    if (i < 3)
-    {
-      sequence_to_use = sequence&;
-      actual_i = i;
-    }
-    else if (i < 8)
-    {
-      sequence_to_use = address;
-      actual_i = i-3;
-    }
-    else
-    {
-      sequence_to_use = data;
-      actual_i = i-8;
-    }
-    if (sequence_to_use[actual_i] == '0') // go down in the middle of time_slot
-    {
-      (raw_code+actual_i)* = time_slot/2 + time_slot%2; // incase it's odd
-      (raw_code+ actual_i++)* = -time_slot/2; // note this mutator on i
-      i++;
-    }
-    else if (sequence[i] == '1')
-    {
-      (raw_code+actual_i)* = -time_slot/2 + time_slot%2;
-      (raw_code+ actual_i++)* = time_slot/2;
-      i++;
-    }
-    else
-    {
-      // TODO ERROR
-    }
-  }
-  new_size* = 14*2;
-  return raw_code;
+  char* command = malloc(sizeof(char) * 14);
+  command[0] = '1'; command[1] = '1'; command[2] = '0';
+  memcpy(command+3, address, 5);
+  memcpy(command+8, address, 6);
+  int output = send_bi_phase(outPin, frequency, dutyCycle, timeslot, command, 14);
+  //TODO test latency
+  return output;
 }
 
 char flip(char a)
@@ -414,7 +396,9 @@ char flip(char a)
 }
 
 //address + data size are both 8 bits
-int* generate_nec(int* new_size, char* address, char* data)
+int* generate_nec(uint32_t outPin,
+    int frequency,
+    double dutyCycle, int* new_size, char* address, char* data)
 {
   int header[2] = {9000,-4500};
   int* size = malloc(sizeof(int));
@@ -435,26 +419,11 @@ int* generate_nec(int* new_size, char* address, char* data)
   {
     total_string[i+24] = flip(data[i]);
   }
-
-  int* rest = generate_pulse_distance(size, 563, 562, 1687, total_string, 32)
-    char* raw_code = add_header(size, header, 2, rest, 32);
-  return raw_code;
+  //header
+  int out1 = ir_send_raw(outPin, frequency, dutyCycle, header, 2);
+  //TODO check latency caused by this.
+  int out2 = send_pulse_distance(size, 563, 562, 1687, total_string, 32)
+  return out1+out2; //TODO some better error
 }
 
-int* add_header(int* new_size, int* header, int h_size, int* body, int b_size)
-{
-  int* merged = malloc(sizeof(int) * (h_size+b_size));
-  for(int i=0; i<h_size; i++)
-  {
-    (merged+i)* = (header+i)*;
-  }
-  for (int i=0; i<b_size; i++)
-  {
-    (merged+i+h_size)* = (body+i)*;
-  }
-  new_size* = h_size+b_size;
-  return merged;
-  //does not free
-}
-*/
 #endif

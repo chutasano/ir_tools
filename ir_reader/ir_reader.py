@@ -57,8 +57,8 @@ while True:
 	for (val, pulse) in command:
                 output = output + repr(pulse) + ', '
         
-	print output
-	print "\n-----------End-----------\n"
+	print output[:-2]
+	print "-----------End-----------\n"
 
 
 	print "Size of array is " + str(len(command))
