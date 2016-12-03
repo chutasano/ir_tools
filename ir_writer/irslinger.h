@@ -287,20 +287,20 @@ int send_bi_phase(uint32_t outPin,
     int frequency,
     double dutyCycle, int time_slot, char* sequence, int sequence_size)
 {
-  int* raw_code = malloc(sizeof(int) * sequence_size*2);
-
+  int* raw_code = (int*)malloc(sizeof(int) * sequence_size*2);
+  int i;
   //generate codes
-  for (int i=0; i<sequence_size*2; i++)
+  for (i=0; i<sequence_size*2; i++)
   {
     if (sequence[i] == '0') // go down in the middle of time_slot
     {
-      (raw_code+i)* = time_slot/2 + time_slot%2; // incase it's odd
-      (raw_code+ ++i)* = -time_slot/2; // note this mutator on i
+      *(raw_code+i) = time_slot/2 + time_slot%2; // incase it's odd
+      *(raw_code+ ++i) = -time_slot/2; // note this mutator on i
     }
     else if (sequence[i] == '1')
     {
-      (raw_code+i)* = -time_slot/2 + time_slot%2;
-      (raw_code+ ++i)* = time_slot/2;
+      *(raw_code+i) = -time_slot/2 + time_slot%2;
+      *(raw_code+ ++i) = time_slot/2;
     }
     else
     {
@@ -317,23 +317,24 @@ int send_bi_phase(uint32_t outPin,
 // one_distance on time for 1 in micros
 int send_pulse_distance(uint32_t outPin,
     int frequency,
-    double dutyCycle, 
+    double dutyCycle,
     int on_length,
     int zero_distance,
     int one_distance,
     char* sequence, int sequence_size)
 {
-  int* raw_code = malloc(sizeof(int) * sequence_size * 2);
-  for (int i=0; i<sequence_size*2; i++)
+  int* raw_code = (int*)malloc(sizeof(int) * sequence_size * 2);
+  int i;
+  for (i=0; i<sequence_size*2; i++)
   {
-    (raw_code+i)* = on_length;
+    *(raw_code+i) = on_length;
     if (sequence[i] == '0')
     {
-      (raw_code+ ++i)* = -zero_distance; //note the mutation
+      *(raw_code+ ++i) = -zero_distance; //note the mutation
     }
     else if (sequence[i] == '1')
     {
-      (raw_code+ ++i)* = one_distance;
+      *(raw_code+ ++i) = -one_distance;
     }
     else
     {
@@ -350,24 +351,25 @@ int send_pulse_length(uint32_t outPin,
     double dutyCycle, 
     int off_length, int zero_burst, int one_burst, char* sequence, int sequence_size)
 {
-  int* raw_code = malloc(sizeof(int) * sequence_size * 2);
-  for (int i=0; i<sequence_size*2; i++)
+  int* raw_code = (int*)malloc(sizeof(int) * sequence_size * 2);
+  int i;
+  for (i=0; i<sequence_size*2; i++)
   {
     if (sequence[i] == '0')
     {
-      (raw_code+i)* = zero_burst;
+      *(raw_code+i) = zero_burst;
     }
     else if (sequence[i] == '1')
     {
-      (raw_code+i)* = one_burst;
+      *(raw_code+i) = one_burst;
     }
     else
     {
       // TODO error
     }
-    (raw_code + ++i)* = -off_length;
+    *(raw_code + ++i) = -off_length;
   }
-  output = ir_send_raw(outPin, frequency, dutyCycle, raw_code, sequence_size*2);
+  int output = ir_send_raw(outPin, frequency, dutyCycle, raw_code, sequence_size*2);
   free(raw_code);
   return output;
 }
@@ -379,12 +381,12 @@ int send_rc5(uint32_t outPin,
     double dutyCycle, char* address, char* data)
 {
   int time_slot = 1780;
-  char* command = malloc(sizeof(char) * 14);
+  char* command = (int*)malloc(sizeof(char) * 14);
   command[0] = '1'; command[1] = '1'; command[2] = '0';
   memcpy(command+3, address, 5);
   memcpy(command+8, address, 6);
-  int output = send_bi_phase(outPin, frequency, dutyCycle, timeslot, command, 14);
-  //TODO test latency
+  int output = send_bi_phase(outPin, frequency, dutyCycle, time_slot, command, 14);
+  free(command); 
   return output;
 }
 
@@ -396,33 +398,35 @@ char flip(char a)
 }
 
 //address + data size are both 8 bits
-int* generate_nec(uint32_t outPin,
+int send_nec(uint32_t outPin,
     int frequency,
     double dutyCycle, int* new_size, char* address, char* data)
 {
   int header[2] = {9000,-4500};
-  int* size = malloc(sizeof(int));
-  char* total_string = malloc(sizeof(int)*8*4);
-  for (int i=0; i<8; i++)
+  int* size = (int*)malloc(sizeof(int));
+  char* total_string = (char*)malloc(sizeof(int)*8*4);
+  int i;
+  for (i=0; i<8; i++)
   {
     total_string[i] = address[i];
   }
-  for (int i=0; i<8; i++)
+  for (i=0; i<8; i++)
   {
     total_string[i+8] = flip(address[i]);
   }
-  for (int i=0; i<8; i++)
+  for (i=0; i<8; i++)
   {
     total_string[i+16] = data[i];
   }
-  for (int i=0; i<8; i++)
+  for (i=0; i<8; i++)
   {
     total_string[i+24] = flip(data[i]);
   }
   //header
   int out1 = ir_send_raw(outPin, frequency, dutyCycle, header, 2);
   //TODO check latency caused by this.
-  int out2 = send_pulse_distance(size, 563, 562, 1687, total_string, 32)
+  int out2 = send_pulse_distance(outPin, frequency, dutyCycle, 563, 562, 1687, total_string, 32);
+  free(total_string);
   return out1+out2; //TODO some better error
 }
 
