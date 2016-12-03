@@ -2,5 +2,6 @@ ir_sender based off
 https://blog.bschwind.com/2016/05/29/sending-infrared-commands-from-a-raspberry-pi-without-lirc/
 https://github.com/bschwind/ir-slinger
 
-
+Implements:
+ NEC Protocol, RC5 Protocol
 

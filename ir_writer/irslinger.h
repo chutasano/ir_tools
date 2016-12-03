@@ -159,80 +159,126 @@ static inline int irSling(uint32_t outPin,
   return 0;
 }
 
-//for raws, positive value = turn on for given microseconds
-//          negative value = turn off for given microseconds
-static inline int ir_send_raw(uint32_t outPin,
-    int frequency,
-    double dutyCycle,
-    const int *pulses,
-    int numPulses)
+
+static inline int irSlingRaw(uint32_t outPin, int frequency, double dutyCycle, const int *pulses, int numPulses)
 {
-  if (outPin > 31)
-  {
-    // Invalid pin number
-    return 1;
-  }
-
-  // Generate Code
+  if (outPin > 31) return 1;
   gpioPulse_t irSignal[MAX_PULSES];
-  int pulseCount = 0;
-
+  int pulseCount =0;
   int i;
-  for (i = 0; i < numPulses; i++)
+  for (i=0; i<numPulses;i++)
   {
-    if (pulses[i] >= 0) {
+    if (i%2==0)
+    {
       carrierFrequency(outPin, frequency, dutyCycle, pulses[i], irSignal, &pulseCount);
-    } else {
-      gap(outPin, -pulses[i], irSignal, &pulseCount);
+    }
+    else
+    {
+      gap(outPin, pulses[i], irSignal, &pulseCount);
     }
   }
 
-  printf("pulse count is %i\n", pulseCount);
-  // End Generate Code
-
-  // Init pigpio
   if (gpioInitialise() < 0)
   {
-    // Initialization failed
-    printf("GPIO Initialization failed\n");
+    printf("GPIO failed");
     return 1;
   }
-
-  // Setup the GPIO pin as an output pin
   gpioSetMode(outPin, PI_OUTPUT);
-
-  // Start a new wave
   gpioWaveClear();
-
   gpioWaveAddGeneric(pulseCount, irSignal);
   int waveID = gpioWaveCreate();
-
   if (waveID >= 0)
   {
     int result = gpioWaveTxSend(waveID, PI_WAVE_MODE_ONE_SHOT);
-
-    printf("Result: %i\n", result);
+    printf("%d, ", result);
   }
-  else
-  {
-    printf("Wave creation failure!\n %i", waveID);
-  }
-
-  // Wait for the wave to finish transmitting
   while (gpioWaveTxBusy())
   {
     time_sleep(0.1);
   }
-
-  // Delete the wave if it exists
   if (waveID >= 0)
   {
     gpioWaveDelete(waveID);
   }
-
-  // Cleanup
   gpioTerminate();
   return 0;
+}
+
+/*
+//for raws, positive value = turn on for given microseconds
+//          negative value = turn off for given microseconds
+static inline int ir_send_raw(uint32_t outPin,
+int frequency,
+double dutyCycle,
+const int *pulses,
+int numPulses)
+{
+if (outPin > 31)
+{
+// Invalid pin number
+return 1;
+}
+
+// Generate Code
+gpioPulse_t irSignal[MAX_PULSES];
+int pulseCount = 0;
+
+int i;
+for (i = 0; i < numPulses; i++)
+{
+if (pulses[i] >= 0) {
+carrierFrequency(outPin, frequency, dutyCycle, pulses[i], irSignal, &pulseCount);
+} else {
+gap(outPin, -pulses[i], irSignal, &pulseCount);
+}
+}
+
+printf("pulse count is %i\n", pulseCount);
+// End Generate Code
+
+// Init pigpio
+if (gpioInitialise() < 0)
+{
+// Initialization failed
+printf("GPIO Initialization failed\n");
+return 1;
+}
+
+// Setup the GPIO pin as an output pin
+gpioSetMode(outPin, PI_OUTPUT);
+
+// Start a new wave
+gpioWaveClear();
+
+gpioWaveAddGeneric(pulseCount, irSignal);
+int waveID = gpioWaveCreate();
+
+if (waveID >= 0)
+{
+int result = gpioWaveTxSend(waveID, PI_WAVE_MODE_ONE_SHOT);
+
+printf("Result: %i\n", result);
+}
+else
+{
+printf("Wave creation failure!\n %i", waveID);
+}
+
+// Wait for the wave to finish transmitting
+while (gpioWaveTxBusy())
+{
+time_sleep(0.1);
+}
+
+// Delete the wave if it exists
+if (waveID >= 0)
+{
+gpioWaveDelete(waveID);
+}
+
+// Cleanup
+gpioTerminate();
+return 0;
 }
 
 
@@ -391,7 +437,7 @@ int* generate_nec(int* new_size, char* address, char* data)
   }
 
   int* rest = generate_pulse_distance(size, 563, 562, 1687, total_string, 32)
-  char* raw_code = add_header(size, header, 2, rest, 32);
+    char* raw_code = add_header(size, header, 2, rest, 32);
   return raw_code;
 }
 
@@ -410,5 +456,5 @@ int* add_header(int* new_size, int* header, int h_size, int* body, int b_size)
   return merged;
   //does not free
 }
-
+*/
 #endif

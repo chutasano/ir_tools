@@ -53,8 +53,12 @@ while True:
 		value = GPIO.input(INPUT_WIRE)
 	
 	print "----------Start----------"
+        output = ''
 	for (val, pulse) in command:
-		print val, pulse
-	print "-----------End-----------\n"
+                output = output + repr(pulse) + ', '
+        
+	print output
+	print "\n-----------End-----------\n"
+
 
 	print "Size of array is " + str(len(command))
