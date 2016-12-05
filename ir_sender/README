@@ -1,0 +1,42 @@
+ir_sender
+
+install pigpio
+make sure pigpio daemon is off:
+	sudo killall pigpiod
+
+make all -> makes
+
+1) nec  (brute force nec algorithm)
+	usage: sudo ./nec
+	time analysis mentioned later
+
+2) nec_raw (test raw commands. see example raws.txt)
+	usage: sudo ./nec_raw < raws.txt
+	can change to any generic raws if you change array size in nec_raw.c
+
+3) light (turn on light)
+	usage: sudo ./light
+	an implementation of NEC. Address is "00000000" Command is "00000010"
+
+
+nec brute force time analysis for Address: 00000000
+and all 256 possible commands:
+>>time sudo ./nec
+real	1m21.196s
+user	0m14.600s
+sys	0m31.470s
+
+Strategies to improve:
+1) hardcode address/command strings. For quick writing, I added a function
+char* int_to_bin(int a) : int -> char*
+that converts given int (0-255) to appropriate binary string.
+
+2) lots of overhead calculation in ir_sender.h to abstract protocols.
+Hardcode nec protocol and map it directly to ir_send_raws
+
+3) make queue of commands while commands are running using multithread
+I think this is all that is necessary.
+Theoretical time to brute force when fully optimized:
+256*256*67.5 (size of address * size of command * time to send command in ms) 
+= 4423.68 seconds = 73.728 minutes = 1.23 hours
+
