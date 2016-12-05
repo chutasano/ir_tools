@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	                                 // the LED will turn on for half the cycle time, and off the other half
 	int i,j;
 	int result;
-	for (i=0; i<1; i++)
+	for (i=0; i<256; i++)
 	{
 		for (j=0; j<256; j++)
 		{

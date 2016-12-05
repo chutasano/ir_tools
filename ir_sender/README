@@ -11,8 +11,10 @@ make all -> makes
 	time analysis mentioned later
 
 2) nec_raw (test raw commands. see example raws.txt)
-	usage: sudo ./nec_raw < raws.txt
-	can change to any generic raws if you change array size in nec_raw.c
+	usage: sudo ./nec_raw [size=67] < raws.txt
+	can change to any generic raws if you set size to some number
+	examples: sudo ./nec_raw < raws.txt (assumes 67 lines)
+		  sudo ./nec_raw 20 < raws.txt (assumes 20 lines)
 
 3) light (turn on light)
 	usage: sudo ./light
