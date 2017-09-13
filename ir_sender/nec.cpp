@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
   int frequency = 38000;           // The frequency of the IR signal in Hz
   double dutyCycle = 0.5;          // The duty cycle of the IR signal. 0.5 means for every cycle,
   // the LED will turn on for half the cycle time, and off the other half
-  IrSender sender(outpin, frequency, dutyCycle);
+  IrSender sender(outPin, frequency, dutyCycle);
   int result;
   for (int i=0; i<256; i++)
   {
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     {
       std::string address = int_to_bin(i);
       std::string command = int_to_bin(j);
-      send_nec(outPin, frequency, dutyCycle, address, command);
+      sender.send_nec(address, command);
     }
     //if(result%25 == 0) 
     printf("Checkpoint. Current address: %d\n", i);

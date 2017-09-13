@@ -1,7 +1,9 @@
 #include <string>
 #include <vector>
 #include <cmath>
+extern "C" {
 #include <pigpio.h>
+}
 #include <cstdlib>
 #include <cstdio>
 
@@ -160,11 +162,11 @@ int IrSender::send_pulse_distance(int on_length, int zero_distance, int one_dist
   for (int i=0; i<data.code.size(); i++)
   {
     codes.push_back(on_length);
-    if (data.code.size()[i] == '0')
+    if (data.code[i] == '0')
     {
       codes.push_back(-zero_distance);
     }
-    else if (data.code.size()[i] == '1')
+    else if (data.code[i] == '1')
     {
       codes.push_back(-one_distance);
     }
@@ -203,16 +205,12 @@ int IrSender::send_pulse_length(int off_length, int zero_burst, int one_burst, S
 }
 
 
-//note default: address_size = 5, data_size = 6
 int IrSender::send_rc5(std::string address, std::string data)
 {
   int time_slot = 1780;
-  char* command = (char*)malloc(sizeof(char) * 14);
-  command[0] = '1'; command[1] = '1'; command[2] = '0';
-  memcpy(command+3, address, 5);
-  memcpy(command+8, address, 6);
-  int output = send_bi_phase(time_slot, NULL, 0, command, 14, NULL, 0);
-  free(command); 
+  SendData s_data;
+  s_data.code = "110" + address + data;
+  int output = send_bi_phase(time_slot, s_data);
   return output;
 }
 
@@ -224,32 +222,20 @@ char IrSender::flip(char a)
 }
 
 //address + data size are both 8 bits
-int send_nec(std::string address, std::string data)
+int IrSender::send_nec(std::string address, std::string data)
 {
-  int header[2] = {9000,-4500};
-  int* size = (int*)malloc(sizeof(int));
-  char* total_string = (char*)malloc(sizeof(char)*(8*4));
-  int i;
-  for (i=0; i<8; i++)
+  SendData s_data;
+  s_data.header = {9000, -4500};
+  std::string flipped_address = address;
+  std::string flipped_data = data;
+  for (int i=0; i<flipped_address.size(); i++)
   {
-    total_string[i] = address[i];
+    flipped_address[i] = flip(flipped_address[i]);
+    flipped_data[i] = flip(flipped_data[i]);
   }
-  for (i=0; i<8; i++)
-  {
-    total_string[i+8] = flip(address[i]);
-  }
-  for (i=0; i<8; i++)
-  {
-    total_string[i+16] = data[i];
-  }
-  for (i=0; i<8; i++)
-  {
-    total_string[i+24] = flip(data[i]);
-  }
-  //header
-  int trail[] = {563};
-  int out = send_pulse_distance(563, 562, 1688, header, 2, total_string, 32, trail, 1);
-  free(total_string);
+  s_data.code = address + flipped_address + data + flipped_data;
+  s_data.footer = {563};
+  int out = send_pulse_distance(563, 562, 1688, s_data);
   return out; //TODO some better error
 }
 

@@ -1,16 +1,16 @@
-all: nec light nec_raw
+FLAGS=--std=c++11 -lpigpio -lm -pthread -lrt 
+
+all: nec light 
 
 nec: nec.cpp ir_sender.o
-	g++ -o nec nec.cpp ir_sender.o -lpigpio -lm -pthread -lrt
+	g++ -o nec nec.cpp ir_sender.o $(FLAGS)
 
 light: light.cpp ir_sender.o
-	g++ -o light light.cpp ir_sender.o -lpigpio -lm -pthread -lrt
+	g++ -o light light.cpp ir_sender.o $(FLAGS)
 
-nec_raw: nec_raw.cpp ir_sender.o
-	g++ -o nec_raw nec_raw.cpp ir_sender.o -lpigpio -lm -pthread -lrt
 
 ir_sender.o: ir_sender.cpp
-	g++ -c ir_sender.cpp -o ir_sender.o -lpigpio -lm -pthread -lrt
+	g++ -c ir_sender.cpp -o ir_sender.o $(FLAGS)
 
 clean:
-	rm nec light nec_raw
+	rm nec light ir_sender.o

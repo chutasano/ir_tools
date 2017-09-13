@@ -3,7 +3,9 @@
 
 #include <string>
 #include <vector>
+extern "C" {
 #include <pigpio.h>
+}
 #define MAX_COMMAND_SIZE 512
 #define MAX_PULSES 12000
 
@@ -49,6 +51,6 @@ private:
   // Generates a low signal gap for duration, in microseconds 
   void gap(double duration, gpioPulse_t *irSignal, int *pulseCount);
   char flip(char a);
-}
+};
 
 #endif //IR_SENDER_H
