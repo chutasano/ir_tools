@@ -6,9 +6,9 @@ from time import sleep
 
 # This is for revision 1 of the Raspberry Pi, Model B
 # This pin is also referred to as GPIO23
-INPUT_WIRE = 37
+INPUT_WIRE = 23
 
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(INPUT_WIRE, GPIO.IN)
 
 while True:
