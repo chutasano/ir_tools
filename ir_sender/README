@@ -10,13 +10,7 @@ make all -> makes
 	usage: sudo ./nec
 	time analysis mentioned later
 
-2) nec_raw (test raw commands. see example raws.txt)
-	usage: sudo ./nec_raw [size=67] < raws.txt
-	can change to any generic raws if you set size to some number
-	examples: sudo ./nec_raw < raws.txt (assumes 67 lines)
-		  sudo ./nec_raw 20 < raws.txt (assumes 20 lines)
-
-3) light (turn on light)
+2) light (turn on light)
 	usage: sudo ./light
 	an implementation of NEC. Address is "00000000" Command is "00000010"
 
@@ -29,14 +23,8 @@ user	0m14.600s
 sys	0m31.470s
 
 Strategies to improve:
-1) hardcode address/command strings. For quick writing, I added a function
-char* int_to_bin(int a) : int -> char*
-that converts given int (0-255) to appropriate binary string.
 
-2) lots of overhead calculation in ir_sender.h to abstract protocols.
-Hardcode nec protocol and map it directly to ir_send_raws
-
-3) make queue of commands while commands are running using multithread
+1) make queue of commands while commands are running using multithread
 I think this is all that is necessary.
 Theoretical time to brute force when fully optimized:
 256*256*67.5 (size of address * size of command * time to send command in ms) 
