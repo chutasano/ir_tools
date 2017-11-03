@@ -5,7 +5,7 @@
 #include <vector>
 #include "ir_reader.h"
 
-#define GPIO_PIN 23
+#define GPIO_PIN 22
 
 IrReader r(GPIO_PIN);
 
@@ -22,6 +22,7 @@ int main()
         {
             w << codes[i] << " ";
         }
+        w << "\n";
         w.close();
     }
 }

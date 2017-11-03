@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <unistd.h>
 #include "ir_reader.h"
 
 const int LED_ON = 0; // for my system, LOW -> receiver detected infrared
@@ -26,12 +27,13 @@ IrReader::IrReader(int num)
     string export_str = "/sys/class/gpio/export";
     ofstream exportgpio(export_str);
     if (!exportgpio){
-	cout << "Unable to export GPIO... do you have root? "<< this->gpionum <<"\n";
+	cout << "Unable to export GPIO"<< this->gpionum <<"\n";
 	exit(1);
     }
     exportgpio << this->gpionum; //write GPIO number to export
     exportgpio.close();
-    // we only need to set it as an input in this case
+    // without the sleep it seems to fail the first time
+    usleep(2000);
     string setdir_str ="/sys/class/gpio/gpio" + this->gpionum + "/direction";
     ofstream setdirgpio(setdir_str); // open direction file for gpio
     if (!setdirgpio){
@@ -78,10 +80,11 @@ vector<string> IrReader::get_code()
     // we can assume IR is on right now because we just exitted the loop
     // pair <on/off, time when detected>
     auto stat = make_pair(LED_ON, chrono::high_resolution_clock::now());
-    int a = 0;
-    while (true)
+    bool loop = true;
+    while (loop);
     {
-        if (get_val() != get<0>(stat)) //status changed, we should record
+        int val = get_val();
+        if (val != get<0>(stat)) //status changed, we should record
         {
            auto now = chrono::high_resolution_clock::now();
            auto diff = now - get<1>(stat);
@@ -96,15 +99,17 @@ vector<string> IrReader::get_code()
            stat = make_pair(1-get<0>(stat), now);
         }
         // check if LED remains off for a while, if so break
-        if (a++ % 1000 == 0 && get<0>(stat) == LED_OFF)
+        if (val == LED_OFF)
         {
             auto now = chrono::high_resolution_clock::now();
             auto diff = now - get<1>(stat);
-            if (diff > chrono::milliseconds(TIMEOUT_MS))
+            cout << chrono::duration_cast<chrono::milliseconds>(diff).count() << "\n";
+            if (chrono::duration_cast<chrono::milliseconds>(diff).count() > TIMEOUT_MS)
             {
-                break;
+                loop = false;
             }
         }
+        cout << val << " ";
     }
     std::vector<string> stringed_codes;
     for (int i = 0; i < codes.size(); i++)
