@@ -1,6 +1,6 @@
 FLAGS=--std=c++11 -lpigpio -lm -pthread -lrt 
 
-all: nec light 
+all: nec light sender
 
 nec: nec.cpp ir_sender.o
 	g++ -o nec nec.cpp ir_sender.o $(FLAGS)
@@ -8,6 +8,8 @@ nec: nec.cpp ir_sender.o
 light: light.cpp ir_sender.o
 	g++ -o light light.cpp ir_sender.o $(FLAGS)
 
+sender: sender.cpp ir_sender.o
+	g++ -o sender sender.cpp ir_sender.o $(FLAGS)
 
 ir_sender.o: ir_sender.cpp
 	g++ -c ir_sender.cpp -o ir_sender.o $(FLAGS)
