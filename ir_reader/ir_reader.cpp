@@ -81,7 +81,7 @@ vector<string> IrReader::get_code()
     // pair <on/off, time when detected>
     auto stat = make_pair(LED_ON, chrono::high_resolution_clock::now());
     bool loop = true;
-    while (loop);
+    while (loop)
     {
         int val = get_val();
         if (val != get<0>(stat)) //status changed, we should record
@@ -103,7 +103,6 @@ vector<string> IrReader::get_code()
         {
             auto now = chrono::high_resolution_clock::now();
             auto diff = now - get<1>(stat);
-            cout << chrono::duration_cast<chrono::milliseconds>(diff).count() << "\n";
             if (chrono::duration_cast<chrono::milliseconds>(diff).count() > TIMEOUT_MS)
             {
                 loop = false;
