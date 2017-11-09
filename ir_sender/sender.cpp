@@ -9,7 +9,8 @@ int main(int argc, char *argv[])
 {
     if (argc < 2 || argc > 3)
     {
-        std::cout << "Usage: " << argv[0] << "<name> [filename: default = ircodes.txt]\n";
+        std::cout << "Usage: " << argv[0] << " <name> [filename: default = ircodes.txt]\n";
+        exit(1);
     }
     std::string filename;
     if (argc == 3)

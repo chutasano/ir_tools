@@ -1,9 +1,2 @@
 Usage:
 
-Modify the pin ID for IR receiver in ir_reader.py
-
-To save on output.txt
--- sudo python ir_reader.py > output.txt
-
-The ir log is in format: [INT], [INT], ..., [INT]
-Can customize via ir_reader.py, or consider using format for matlab/mathematica

@@ -12,7 +12,7 @@
 
 const int LED_ON = 0; // for my system, LOW -> receiver detected infrared
 const int LED_OFF = 1;
-const int TIMEOUT_MS = 5000; // 5 seconds of no change seems reasonable
+const int TIMEOUT_MS = 2000; // 2 seconds of no change seems reasonable
 
 using namespace std;
 
@@ -32,8 +32,6 @@ IrReader::IrReader(int num)
     }
     exportgpio << this->gpionum; //write GPIO number to export
     exportgpio.close();
-    // without the sleep it seems to fail the first time
-    usleep(2000);
     string setdir_str ="/sys/class/gpio/gpio" + this->gpionum + "/direction";
     ofstream setdirgpio(setdir_str); // open direction file for gpio
     if (!setdirgpio){
@@ -108,7 +106,6 @@ vector<string> IrReader::get_code()
                 loop = false;
             }
         }
-        cout << val << " ";
     }
     std::vector<string> stringed_codes;
     for (int i = 0; i < codes.size(); i++)
