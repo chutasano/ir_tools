@@ -16,6 +16,7 @@ int main(int argc, char* argv[])
         std::cout << "Usage: " << argv[0] << " [filename: default = ircodes.txt]\n]";
         exit(1);
     }
+    std::cout << "Press a button to record on the remote\n";
     std::vector<std::string> codes = r.get_code();
     std::string filename;
     if (argc == 2)
@@ -27,7 +28,7 @@ int main(int argc, char* argv[])
         filename = "ircodes.txt";
     }
     std::string name;
-    std::cout << "Enter name to save: ";
+    std::cout << "Done recording.\nEnter name to save: ";
     std::cin >> name;
     std::ofstream w(filename, std::ofstream::out | std::ofstream::app);
     w << "name: " << name << "\n";
@@ -37,4 +38,5 @@ int main(int argc, char* argv[])
     }
     w << "\n";
     w.close();
+    std::cout << "Saved to " << filename << " with name: " << name << "\n";
 }
