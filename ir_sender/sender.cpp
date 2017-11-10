@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     {
         codes.push_back(n);
     }
-    std::cout << "Sending command " << name << " from " << filename << "\n";
+    std::cout << "Sending command " << codename << " from " << filename << "\n";
     uint32_t outPin = 22;            // The Broadcom pin number the signal will be sent on
     int frequency = 38000;           // The frequency of the IR signal in Hz
     double dutyCycle = 0.5;          // The duty cycle of the IR signal. 0.5 means for every cycle,
