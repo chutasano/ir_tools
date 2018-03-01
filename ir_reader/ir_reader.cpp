@@ -3,6 +3,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -40,6 +41,10 @@ IrReader::IrReader(int num)
     }
     setdirgpio << "in";
     setdirgpio.close();
+    if (getvalgpio)
+    {
+        getvalgpio.close(); //close the value file
+    }
 }
 
 IrReader::~IrReader()
@@ -56,21 +61,24 @@ IrReader::~IrReader()
 
 int IrReader::get_val()
 {
-    static string getval_str = "/sys/class/gpio/gpio" + this->gpionum + "/value";
-    ifstream getvalgpio(getval_str);// open value file for gpio
-    if (!getvalgpio){
-	cout << "Unable to get value of GPIO"<< this->gpionum <<"\n";
-	return -1;
+    if (!getvalgpio)
+    {
+        string getval_str = "/sys/class/gpio/gpio" + this->gpionum + "/value";
+        getvalgpio = ifstream(getval_str);
+        if (!getvalgpio)
+        {
+            cout << "Unable to get value of GPIO"<< this->gpionum <<"\n";
+            return -1;
+        }
     }
     int val;
     getvalgpio >> val ;  //read gpio value
-    getvalgpio.close(); //close the value file
     return val;
 }
 
-vector<string> IrReader::get_code()
+list<string> IrReader::get_code()
 {
-    vector<int64_t> codes;
+    list<int64_t> codes;
     while (get_val() != LED_ON) // LOW -> IR detected
     {
         // keep spinning until we get a LOW
@@ -107,10 +115,10 @@ vector<string> IrReader::get_code()
             }
         }
     }
-    std::vector<string> stringed_codes;
-    for (int i = 0; i < codes.size(); i++)
+    list<string> stringed_codes;
+    for (int64_t c : codes)
     {
-        stringed_codes.push_back(to_string(codes[i]));
+        stringed_codes.push_back(to_string(c));
     }
     return stringed_codes;
 }

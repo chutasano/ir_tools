@@ -2,41 +2,43 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <vector>
+#include <list>
 #include "ir_reader.h"
 
 #define GPIO_PIN 23
 
 IrReader r(GPIO_PIN);
 
+using namespace std;
+
 int main(int argc, char* argv[])
 {
     if (argc > 2 || argc < 1)
     {
-        std::cout << "Usage: " << argv[0] << " [filename: default = ircodes.txt]\n]";
+        cout << "Usage: " << argv[0] << " [filename: default = ircodes.txt]\n]";
         exit(1);
     }
-    std::cout << "Press a button to record on the remote\n";
-    std::vector<std::string> codes = r.get_code();
-    std::string filename;
+    cout << "Press a button to record on the remote\n";
+    list<string> codes = r.get_code();
+    string filename;
     if (argc == 2)
     {
-        std::string filename = argv[1];
+        string filename = argv[1];
     }
     else
     {
         filename = "ircodes.txt";
     }
-    std::string name;
-    std::cout << "Done recording.\nEnter name to save: ";
-    std::cin >> name;
-    std::ofstream w(filename, std::ofstream::out | std::ofstream::app);
+    string name;
+    cout << "Done recording.\nEnter name to save: ";
+    cin >> name;
+    ofstream w(filename, ofstream::out | ofstream::app);
     w << "name: " << name << "\n";
-    for (int i = 0; i < codes.size(); i++)
+    for (string s : codes)
     {
-        w << codes[i] << " ";
+        w << s << " ";
     }
     w << "\n";
     w.close();
-    std::cout << "Saved to " << filename << " with name: " << name << "\n";
+    cout << "Saved to " << filename << " with name: " << name << "\n";
 }
