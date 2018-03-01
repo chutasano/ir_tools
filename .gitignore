@@ -1,1 +1,7 @@
+ir_reader/recorder
+ir_sender/light
+ir_sender/nec
+ir_sender/sender
+recorder
+sender
 *.o
