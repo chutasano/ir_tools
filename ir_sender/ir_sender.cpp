@@ -120,6 +120,8 @@ int IrSender::ir_send_raw(std::vector<int> pulses)
     gpioWaveDelete(waveID);
   }
 
+  gpioWrite(m_outpin, 1);
+
   // Cleanup
   gpioTerminate();
   return 0;
