@@ -64,7 +64,7 @@ int IrReader::get_val()
     if (!getvalgpio)
     {
         string getval_str = "/sys/class/gpio/gpio" + this->gpionum + "/value";
-        getvalgpio = ifstream(getval_str);
+        getvalgpio.open(getval_str);
         if (!getvalgpio)
         {
             cout << "Unable to get value of GPIO"<< this->gpionum <<"\n";
