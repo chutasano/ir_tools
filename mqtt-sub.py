@@ -9,10 +9,10 @@ import paho.mqtt.client as mqtt
 import subprocess as s
 
 #change these based on your setup
-muser="username"
-mpass="password"
-murl="public ip of ec2"
-mport=1234 # port number as an int
+muser="user"
+mpass="user"
+murl="ec2-18-218-182-153.us-east-2.computer.amazonaws.com"
+mport=8883 # port number as an int
 
 #called while client tries to establish connection with the server 
 def on_connect(mqttc, obj, flags, rc):
@@ -40,6 +40,7 @@ mqttc.username_pw_set(username=muser,password=mpass)
 mqttc.on_connect = on_connect
 mqttc.on_subscribe = on_subscribe
 mqttc.on_message = on_message
+mqttc.tls_set(ca_certs="/home/pi/key/ca.crt")
 
 #connecting to aws-account-specific-iot-endpoint
 mqttc.connect(murl, port=mport) #AWS IoT service hostname and portno

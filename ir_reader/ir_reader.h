@@ -1,9 +1,7 @@
-// based off http://hertaville.com/introduction-to-accessing-the-raspberry-pis-gpio-in-c.html
-
 #pragma once
 
 #include <fstream>
-#include <list>
+#include <vector>
 #include <string>
 
 class IrReader
@@ -11,11 +9,9 @@ class IrReader
     public:
         IrReader(int num);
         ~IrReader();
-        std::list<std::string> get_code();
+        std::vector<int> get_code();
 
     private:
-        int get_val();
-        std::string gpionum;
-        std::ifstream getvalgpio;
+        int gpionum;
 };
 

@@ -1,6 +1,8 @@
 // based off http://hertaville.com/introduction-to-accessing-the-raspberry-pis-gpio-in-c.html
 
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -10,6 +12,11 @@
 #include <utility>
 #include <unistd.h>
 #include "ir_reader.h"
+
+extern "C"
+{
+#include "pigpio.h"
+}
 
 const int LED_ON = 0; // for my system, LOW -> receiver detected infrared
 const int LED_OFF = 1;
@@ -24,102 +31,69 @@ IrReader::IrReader(int num)
         cout << "Bad GPIO val\n";
         exit(1);
     }
-    this->gpionum = to_string(num);
-    string export_str = "/sys/class/gpio/export";
-    ofstream exportgpio(export_str);
-    if (!exportgpio){
-	cout << "Unable to export GPIO"<< this->gpionum <<"\n";
-	exit(1);
-    }
-    exportgpio << this->gpionum; //write GPIO number to export
-    exportgpio.close();
-    string setdir_str ="/sys/class/gpio/gpio" + this->gpionum + "/direction";
-    ofstream setdirgpio(setdir_str); // open direction file for gpio
-    if (!setdirgpio){
-	cout << "Unable to set direction of GPIO"<< this->gpionum << "\n";
-	exit(1);
-    }
-    setdirgpio << "in";
-    setdirgpio.close();
-    if (getvalgpio)
-    {
-        getvalgpio.close(); //close the value file
-    }
+    this->gpionum = num;
 }
 
 IrReader::~IrReader()
 {
-    string unexport_str = "/sys/class/gpio/unexport";
-    ofstream unexportgpio(unexport_str);
-    if (!unexportgpio){
-	cout << "Unable to unexport GPIO."<< this->gpionum <<"\n";
-	exit(1);
-    }
-    unexportgpio << this->gpionum ; //write GPIO number to unexport
-    unexportgpio.close(); //close unexport file
 }
 
-int IrReader::get_val()
+vector<int> tmp;
+bool init;
+bool timed_out;
+condition_variable cv;
+mutex mtx;
+
+void cb_get_code(int gpio, int level, uint32_t tick)
 {
-    if (!getvalgpio)
+    cout << "Tick, " << level << endl;
+    static uint32_t last_tick;
+    static const uint32_t tick_wrap = 0xFFFFFFFF;
+    if (!init && level != PI_TIMEOUT)
     {
-        string getval_str = "/sys/class/gpio/gpio" + this->gpionum + "/value";
-        getvalgpio.open(getval_str);
-        if (!getvalgpio)
+        init = true;
+        last_tick = tick;
+        gpioSetWatchdog(gpio, TIMEOUT_MS);
+        return;
+    }
+    else if (level == PI_TIMEOUT)
+    {
+        timed_out = true;
+        cv.notify_one();
+    }
+    else
+    {
+        int64_t time_diff_us = tick - last_tick;
+        if (time_diff_us < 0) time_diff_us += tick_wrap;
+        if (level == LED_ON)
         {
-            cout << "Unable to get value of GPIO"<< this->gpionum <<"\n";
-            return -1;
+            tmp.push_back(-time_diff_us);
+            last_tick = tick;
+        }
+        else if (level == LED_OFF)
+        {
+            tmp.push_back(time_diff_us);
+            last_tick = tick;
         }
     }
-    int val;
-    getvalgpio >> val ;  //read gpio value
-    return val;
 }
 
-list<string> IrReader::get_code()
+vector<int> IrReader::get_code()
 {
-    list<int64_t> codes;
-    while (get_val() != LED_ON) // LOW -> IR detected
+    if (gpioInitialise() < 0)
     {
-        // keep spinning until we get a LOW
+        cerr << "Can't initialize pigpiod\n";
+        exit(1);
     }
-    // we can assume IR is on right now because we just exitted the loop
-    // pair <on/off, time when detected>
-    auto stat = make_pair(LED_ON, chrono::high_resolution_clock::now());
-    bool loop = true;
-    while (loop)
-    {
-        int val = get_val();
-        if (val != get<0>(stat)) //status changed, we should record
-        {
-           auto now = chrono::high_resolution_clock::now();
-           auto diff = now - get<1>(stat);
-           if (get<0>(stat) == LED_ON) // means record positive number
-           {
-               codes.push_back(chrono::duration_cast<chrono::microseconds>(diff).count());
-           }
-           else
-           {
-               codes.push_back(-(chrono::duration_cast<chrono::microseconds>(diff).count()));
-           }
-           stat = make_pair(1-get<0>(stat), now);
-        }
-        // check if LED remains off for a while, if so break
-        if (val == LED_OFF)
-        {
-            auto now = chrono::high_resolution_clock::now();
-            auto diff = now - get<1>(stat);
-            if (chrono::duration_cast<chrono::milliseconds>(diff).count() > TIMEOUT_MS)
-            {
-                loop = false;
-            }
-        }
-    }
-    list<string> stringed_codes;
-    for (int64_t c : codes)
-    {
-        stringed_codes.push_back(to_string(c));
-    }
-    return stringed_codes;
+    gpioSetMode(gpionum, PI_INPUT);
+    unique_lock<mutex> lk(mtx);
+    tmp = vector<int>();
+    init = false;
+    timed_out = false;
+    gpioSetAlertFunc(gpionum, cb_get_code);
+    cv.wait(lk, [] {return timed_out;
+            });
+    gpioTerminate();
+    return tmp;
 }
 

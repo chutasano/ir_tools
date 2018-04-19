@@ -1,4 +1,4 @@
-FLAGS=--std=c++11 -g
+FLAGS=--std=c++11 -g -lpigpio -lm -lpthread -lrt
 
 all: recorder
 
